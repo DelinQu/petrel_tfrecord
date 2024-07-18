@@ -89,7 +89,9 @@ _FLOATLIST = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b("\020\001")),
+            options=_descriptor._ParseOptions(
+                descriptor_pb2.FieldOptions(), _b("\020\001")
+            ),
         ),
     ],
     extensions=[],
@@ -127,7 +129,9 @@ _INT64LIST = _descriptor.Descriptor(
             containing_type=None,
             is_extension=False,
             extension_scope=None,
-            options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b("\020\001")),
+            options=_descriptor._ParseOptions(
+                descriptor_pb2.FieldOptions(), _b("\020\001")
+            ),
         ),
     ],
     extensions=[],
@@ -211,7 +215,11 @@ _FEATURE = _descriptor.Descriptor(
     extension_ranges=[],
     oneofs=[
         _descriptor.OneofDescriptor(
-            name="kind", full_name="tfrecord.Feature.kind", index=0, containing_type=None, fields=[]
+            name="kind",
+            full_name="tfrecord.Feature.kind",
+            index=0,
+            containing_type=None,
+            fields=[],
         ),
     ],
     serialized_start=120,
@@ -552,7 +560,9 @@ _FEATURES.fields_by_name["feature"].message_type = _FEATURES_FEATUREENTRY
 _FEATURELIST.fields_by_name["feature"].message_type = _FEATURE
 _FEATURELISTS_FEATURELISTENTRY.fields_by_name["value"].message_type = _FEATURELIST
 _FEATURELISTS_FEATURELISTENTRY.containing_type = _FEATURELISTS
-_FEATURELISTS.fields_by_name["feature_list"].message_type = _FEATURELISTS_FEATURELISTENTRY
+_FEATURELISTS.fields_by_name["feature_list"].message_type = (
+    _FEATURELISTS_FEATURELISTENTRY
+)
 _EXAMPLE.fields_by_name["features"].message_type = _FEATURES
 _SEQUENCEEXAMPLE.fields_by_name["context"].message_type = _FEATURES
 _SEQUENCEEXAMPLE.fields_by_name["feature_lists"].message_type = _FEATURELISTS
@@ -571,7 +581,7 @@ BytesList = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_BYTESLIST,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.BytesList)
     ),
 )
@@ -582,7 +592,7 @@ FloatList = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_FLOATLIST,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.FloatList)
     ),
 )
@@ -593,7 +603,7 @@ Int64List = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_INT64LIST,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.Int64List)
     ),
 )
@@ -604,7 +614,7 @@ Feature = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_FEATURE,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.Feature)
     ),
 )
@@ -619,12 +629,12 @@ Features = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             dict(
                 DESCRIPTOR=_FEATURES_FEATUREENTRY,
-                __module__="example_pb2"
+                __module__="example_pb2",
                 # @@protoc_insertion_point(class_scope:tfrecord.Features.FeatureEntry)
             ),
         ),
         DESCRIPTOR=_FEATURES,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.Features)
     ),
 )
@@ -636,7 +646,7 @@ FeatureList = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_FEATURELIST,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.FeatureList)
     ),
 )
@@ -651,12 +661,12 @@ FeatureLists = _reflection.GeneratedProtocolMessageType(
             (_message.Message,),
             dict(
                 DESCRIPTOR=_FEATURELISTS_FEATURELISTENTRY,
-                __module__="example_pb2"
+                __module__="example_pb2",
                 # @@protoc_insertion_point(class_scope:tfrecord.FeatureLists.FeatureListEntry)
             ),
         ),
         DESCRIPTOR=_FEATURELISTS,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.FeatureLists)
     ),
 )
@@ -668,7 +678,7 @@ Example = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_EXAMPLE,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.Example)
     ),
 )
@@ -679,7 +689,7 @@ SequenceExample = _reflection.GeneratedProtocolMessageType(
     (_message.Message,),
     dict(
         DESCRIPTOR=_SEQUENCEEXAMPLE,
-        __module__="example_pb2"
+        __module__="example_pb2",
         # @@protoc_insertion_point(class_scope:tfrecord.SequenceExample)
     ),
 )
@@ -687,13 +697,23 @@ _sym_db.RegisterMessage(SequenceExample)
 
 
 DESCRIPTOR.has_options = True
-DESCRIPTOR._options = _descriptor._ParseOptions(descriptor_pb2.FileOptions(), _b("\370\001\001"))
+DESCRIPTOR._options = _descriptor._ParseOptions(
+    descriptor_pb2.FileOptions(), _b("\370\001\001")
+)
 _FLOATLIST.fields_by_name["value"].has_options = True
-_FLOATLIST.fields_by_name["value"]._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b("\020\001"))
+_FLOATLIST.fields_by_name["value"]._options = _descriptor._ParseOptions(
+    descriptor_pb2.FieldOptions(), _b("\020\001")
+)
 _INT64LIST.fields_by_name["value"].has_options = True
-_INT64LIST.fields_by_name["value"]._options = _descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b("\020\001"))
+_INT64LIST.fields_by_name["value"]._options = _descriptor._ParseOptions(
+    descriptor_pb2.FieldOptions(), _b("\020\001")
+)
 _FEATURES_FEATUREENTRY.has_options = True
-_FEATURES_FEATUREENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b("8\001"))
+_FEATURES_FEATUREENTRY._options = _descriptor._ParseOptions(
+    descriptor_pb2.MessageOptions(), _b("8\001")
+)
 _FEATURELISTS_FEATURELISTENTRY.has_options = True
-_FEATURELISTS_FEATURELISTENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b("8\001"))
+_FEATURELISTS_FEATURELISTENTRY._options = _descriptor._ParseOptions(
+    descriptor_pb2.MessageOptions(), _b("8\001")
+)
 # @@protoc_insertion_point(module_scope)

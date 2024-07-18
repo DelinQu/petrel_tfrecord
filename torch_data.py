@@ -8,7 +8,18 @@ import struct
 import warnings
 from functools import partial
 from io import BufferedIOBase
-from typing import Any, cast, Dict, Iterable, Iterator, List, NamedTuple, Optional, Tuple, Union
+from typing import (
+    Any,
+    cast,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+from torch.utils import data
 from torch.utils.data import IterDataPipe
 import torch
 from io import IOBase
@@ -52,16 +63,23 @@ TFRecordExample = Dict[str, TFRecordExampleFeature]
 # custom imports
 def validate_pathname_binary_tuple(data: Tuple[str, IOBase]):
     if not isinstance(data, tuple):
-        raise TypeError(f"pathname binary data should be tuple type, but it is type {type(data)}")
+        raise TypeError(
+            f"pathname binary data should be tuple type, but it is type {type(data)}"
+        )
     if len(data) != 2:
-        raise TypeError(f"pathname binary stream tuple length should be 2, but got {len(data)}")
+        raise TypeError(
+            f"pathname binary stream tuple length should be 2, but got {len(data)}"
+        )
     if not isinstance(data[0], str):
-        raise TypeError(f"pathname within the tuple should have string type pathname, but it is type {type(data[0])}")
+        raise TypeError(
+            f"pathname within the tuple should have string type pathname, but it is type {type(data[0])}"
+        )
     # if not isinstance(data[1], IOBase) and not isinstance(data[1], StreamWrapper):
     # NOTE: weak checking
     if not isinstance(data[1], IOBase):
         raise TypeError(
-            f"binary stream within the tuple should have IOBase or" f"its subclasses as type, but it is type {type(data[1])}"
+            f"binary stream within the tuple should have IOBase or"
+            f"its subclasses as type, but it is type {type(data[1])}"
         )
 
 
@@ -144,7 +162,10 @@ def _reshape_list(value, shape):
             assert len(value) == shape[0]
             return value
         dim_size = len(value) // shape[0]
-        return [_reshape(value[i * dim_size : (i + 1) * dim_size], shape[1:]) for i in range(dim_size)]
+        return [
+            _reshape(value[i * dim_size : (i + 1) * dim_size], shape[1:])
+            for i in range(dim_size)
+        ]
 
     return _reshape(flat_list, shape)
 
@@ -162,7 +183,9 @@ def _apply_feature_spec(value, feature_spec):
     return value
 
 
-def _parse_tfrecord_features(features, spec: Optional[TFRecordExampleSpec]) -> Dict[str, torch.Tensor]:
+def _parse_tfrecord_features(
+    features, spec: Optional[TFRecordExampleSpec]
+) -> Dict[str, torch.Tensor]:
     result = dict()
     features = features.feature
     for key in features.keys():
@@ -174,7 +197,9 @@ def _parse_tfrecord_features(features, spec: Optional[TFRecordExampleSpec]) -> D
     return result
 
 
-def parse_tfrecord_sequence_example(example, spec: Optional[TFRecordExampleSpec]) -> TFRecordExample:
+def parse_tfrecord_sequence_example(
+    example, spec: Optional[TFRecordExampleSpec]
+) -> TFRecordExample:
     # Parse context features
     result = cast(TFRecordExample, _parse_tfrecord_features(example.context, spec))
 
@@ -191,7 +216,9 @@ def parse_tfrecord_sequence_example(example, spec: Optional[TFRecordExampleSpec]
                 "TFRecord example's key {key} is contained in both the context and feature lists. This is not supported."
             )
 
-        value: Union[torch.Tensor, List[Any]] = list(map(partial(process_feature), feature))
+        value: Union[torch.Tensor, List[Any]] = list(
+            map(partial(process_feature), feature)
+        )
 
         # For known torch dtypes, we stack the list features
         if feature_spec is not None and isinstance(feature_spec[1], torch.dtype):
@@ -199,7 +226,9 @@ def parse_tfrecord_sequence_example(example, spec: Optional[TFRecordExampleSpec]
         value = _apply_feature_spec(value, feature_spec)
         result[key] = value
     if spec is not None and len(result.keys()) != len(spec.keys()):
-        raise RuntimeError(f"Example is missing some required keys: {sorted(result.keys())} != {sorted(spec.keys())}")
+        raise RuntimeError(
+            f"Example is missing some required keys: {sorted(result.keys())} != {sorted(spec.keys())}"
+        )
     return result
 
 
@@ -256,7 +285,9 @@ class TFRecordLoaderIterDataPipe(IterDataPipe[TFRecordExample]):
                     example.ParseFromString(example_bytes)  # type: ignore
                     yield parse_tfrecord_sequence_example(example, self.spec)
             except RuntimeError as e:
-                warnings.warn(f"Unable to read from corrupted tfrecord stream {pathname} due to: {e}, abort!")
+                warnings.warn(
+                    f"Unable to read from corrupted tfrecord stream {pathname} due to: {e}, abort!"
+                )
                 raise e
 
     def __len__(self) -> int:
@@ -265,105 +296,78 @@ class TFRecordLoaderIterDataPipe(IterDataPipe[TFRecordExample]):
         return self.length
 
 
-# custom muti-threadeds datapipe
-import threading
-import queue
-import time
-import os
-from petrel_client.client import Client
+from io import IOBase
+from typing import Iterable, Tuple, Optional
+
+from torch.utils.data.datapipes._decorator import functional_datapipe
+from torch.utils.data.datapipes.datapipe import IterDataPipe
+from torch.utils.data.datapipes.utils.common import get_file_binaries_from_pathnames
+
+# __all__ = ["FileOpenerIterDataPipe",]
+# @functional_datapipe("open_files")
 
 
-class DatasetBuilder(IterDataPipe[TFRecordExample]):
+class FileOpenerIterDataPipe(IterDataPipe[Tuple[str, IOBase]]):
+    r"""
+    Given pathnames, opens files and yield pathname and file stream
+    in a tuple (functional name: ``open_files``).
+
+    Args:
+        datapipe: Iterable datapipe that provides pathnames
+        mode: An optional string that specifies the mode in which
+            the file is opened by ``open()``. It defaults to ``r``, other options are
+            ``b`` for reading in binary mode and ``t`` for text mode.
+        encoding: An optional string that specifies the encoding of the
+            underlying file. It defaults to ``None`` to match the default encoding of ``open``.
+        length: Nominal length of the datapipe
+
+    Note:
+        The opened file handles will be closed by Python's GC periodically. Users can choose
+        to close them explicitly.
+
+    Example:
+        >>> # xdoctest: +SKIP
+        >>> from torchdata.datapipes.iter import FileLister, FileOpener, StreamReader
+        >>> dp = FileLister(root=".").filter(lambda fname: fname.endswith('.txt'))
+        >>> dp = FileOpener(dp)
+        >>> dp = StreamReader(dp)
+        >>> list(dp)
+        [('./abc.txt', 'abc')]
+    """
+
     def __init__(
         self,
-        base_path="s3://songhaoming/open_x_embodiment_origin",
-        split="train",
-        name="roboturk/0.1.0",
-        conf_path="~/vla-oss.conf",
-        max_queue_size=1,
-        num_producers=1,
-    ) -> None:
+        datapipe: Iterable[str],
+        mode: str = "r",
+        encoding: Optional[str] = None,
+        length: int = -1,
+    ):
         super().__init__()
-        self.base_path = base_path
-        self.split = "" if split == "all" else split
-        self.name = name
+        self.datapipe: Iterable = datapipe
+        self.mode: str = mode
+        self.encoding: Optional[str] = encoding
 
-        self.file_client = Client(conf_path)
-        self.file_path_list = self.file_client.get_file_iterator(os.path.join(self.base_path, self.name))
-        self.file_path_list = sorted(filter(lambda x: f"{self.split}.tfrecord" in x, self.file_path_list))
+        if self.mode not in ("b", "t", "rb", "rt", "r"):
+            raise ValueError("Invalid mode {}".format(mode))
+        # TODO: enforce typing for each instance based on mode, otherwise
+        #       `argument_validation` with this DataPipe may be potentially broken
 
-        self.max_queue_size = max_queue_size
-        self.num_producers = num_producers
-        self.share_data = queue.Queue(maxsize=max_queue_size)
-        self.producer_threads = []
-        self.consumer_thread = None
+        if "b" in mode and encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
 
-    def producer(self, index):
-        idxs = range(index, len(self.file_path_list), self.num_producers)
-        datapipe = FileOpener(map(lambda x: self.files_list[x], idxs), mode="b")
-        while True:
-            try:
-                file = next(datapipe)
-            except StopIteration:
-                break
-            print(f"* Producer {index} producing: {file}")
-            self.share_data.put(file)
-            print(f"- Producer {index} put {file} into queue")
-            time.sleep(1)
+        self.length: int = length
 
-    def consumer(self):
-        while True:
-            file = self.share_data.get()
-            if file is None:
-                break
-            print(f"Consumer consuming: {file}")
-            # 在这里添加处理文件的逻辑
-            time.sleep(2)
-            self.share_data.task_done()
-        print("Consumer finished processing all files")
+    # Remove annotation due to 'IOBase' is a general type and true type
+    # is determined at runtime based on mode. Some `DataPipe` requiring
+    # a subtype would cause mypy error.
+    def __iter__(self):
+        yield from get_file_binaries_from_pathnames(
+            self.datapipe, self.mode, self.encoding
+        )
 
-    def start_producers(self):
-        for i in range(self.num_producers):
-            t = threading.Thread(target=self.producer, args=(i,))
-            t.start()
-            self.producer_threads.append(t)
-
-    def start_consumer(self):
-        self.consumer_thread = threading.Thread(target=self.consumer)
-        self.consumer_thread.start()
-
-    def join_producers(self):
-        for t in self.producer_threads:
-            t.join()
-
-    def join_consumer(self):
-        self.share_data.put(None)  # 通知消费者线程已经没有更多的文件了
-        self.consumer_thread.join()
-
-    def process_files(self):
-        self.start_producers()
-        self.start_consumer()
-        self.join_producers()
-        self.join_consumer()
-        print("All files have been processed.")
-
-    def build():
-        self.process_files()
-
-    def __iter__(self) -> Iterator[TFRecordExample]:
-        for data in self.share_data:
-            validate_pathname_binary_tuple(data)
-            pathname, data_stream = data
-            try:
-                for example_bytes in iterate_tfrecord_file(data_stream):
-                    example = example_pb2.SequenceExample()  # type: ignore
-                    example.ParseFromString(example_bytes)  # type: ignore
-                    yield parse_tfrecord_sequence_example(example, self.spec)
-            except RuntimeError as e:
-                warnings.warn(f"Unable to read from corrupted tfrecord stream {pathname} due to: {e}, abort!")
-                raise e
-
-    def __len__(self) -> int:
+    def __len__(self):
         if self.length == -1:
-            raise TypeError(f"{type(self).__name__} instance doesn't have valid length")
+            raise TypeError(
+                "{} instance doesn't have valid length".format(type(self).__name__)
+            )
         return self.length
